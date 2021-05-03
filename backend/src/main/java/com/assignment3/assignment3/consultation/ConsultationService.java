@@ -1,0 +1,97 @@
+package com.assignment3.assignment3.consultation;
+
+import com.assignment3.assignment3.consultation.dto.ConsultationDisplayDto;
+import com.assignment3.assignment3.consultation.dto.ConsultationRequestDto;
+import com.assignment3.assignment3.consultation.dto.ConsultationUpdateDateRequest;
+import com.assignment3.assignment3.consultation.mapper.ConsultationMapper;
+import com.assignment3.assignment3.consultation.model.Consultation;
+import com.assignment3.assignment3.patient.PatientRepository;
+import com.assignment3.assignment3.user.UserRepository;
+import com.assignment3.assignment3.user.model.ERole;
+import lombok.RequiredArgsConstructor;
+import org.hibernate.metamodel.model.convert.internal.JpaAttributeConverterImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.awt.print.Pageable;
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.assignment3.assignment3.consultation.ConsultationSpecifications.similarDoctor;
+import static com.assignment3.assignment3.consultation.ConsultationSpecifications.similarPatient;
+
+@Service
+@RequiredArgsConstructor
+//TODO add validation for dates(aka vezi daca-i liber doftoru')
+public class ConsultationService {
+    private final ConsultationRepository consultationRepository;
+    private final UserRepository userRepository;
+    private final PatientRepository patientRepository;
+    private final ConsultationMapper consultationMapper;
+
+    public void save(ConsultationRequestDto request) {
+        var doctor = userRepository.findById(request.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Couldn't find medic with given id."));
+        if(!doctor.getRole().getName().equals(ERole.DOCTOR)) {
+            throw new RuntimeException("User with given id is not a doctor.");
+        }
+        var patient = patientRepository.findById(request.getPatientId())
+                .orElseThrow(() -> new RuntimeException("Couldn't find patient with given id."));
+
+        var endDate = new Date(request.getDate().getTime() + request.getDuration() * 60000L);
+        var consultation = Consultation.builder()
+                .doctor(doctor)
+                .patient(patient)
+                .startDate(request.getDate())
+                .endDate(endDate)
+                .description(request.getDescription())
+                .build();
+        consultationRepository.save(consultation);
+    }
+
+    public List<ConsultationDisplayDto> findAll(String doctor, String patient,
+                                                int page, int consultationsPerPage) {
+        var pageable = PageRequest.of(page, consultationsPerPage);
+        var specification = similarDoctor(doctor)
+                .and(similarPatient(patient));
+        return consultationRepository.findAll(specification, pageable)
+                .get().map(consultationMapper::consultationDisplayFromConsultation)
+                .collect(Collectors.toList());
+    }
+
+    public void delete(Long id) {
+        consultationRepository.deleteById(id);
+    }
+
+    public void updateDate(ConsultationUpdateDateRequest request, Long id) {
+        var consultation = findById(id);
+        var newStartDate = request.getNewDate();
+        var newEndDate = new Date(newStartDate.getTime() + request.getDuration() * 60000L);
+        consultation.setStartDate(newStartDate);
+        consultation.setEndDate(newEndDate);
+        consultationRepository.save(consultation);
+    }
+
+    public void updateDoctor(Long consultationId, Long doctorId) {
+        var doctor = userRepository.findById(doctorId)
+                .orElseThrow(() -> new RuntimeException("No doctor with given id."));
+        if(!doctor.getRole().getName().equals(ERole.DOCTOR)) {
+            throw new RuntimeException("Given user is not a doctor");
+        }
+        var consultation = findById(consultationId);
+        consultation.setDoctor(doctor);
+        consultationRepository.save(consultation);
+    }
+
+    public void updateDescription(Long id, String description) {
+        var consultation = findById(id);
+        consultation.setDescription(description);
+        consultationRepository.save(consultation);
+    }
+
+    public Consultation findById(Long id) {
+        return consultationRepository.findById(id)
+                .orElseThrow(()-> new RuntimeException("No consultation with given id."));
+    }
+}

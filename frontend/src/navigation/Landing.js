@@ -20,19 +20,24 @@ const LandingPage = () => {
                     stackable
                 >
                     <Grid.Column>
-                        {showLogin ? <LoginForm /> : <RegisterForm />}
+                        {showLogin ?
+                            <LoginForm />
+                            :
+                            <RegisterForm />}
                     </Grid.Column>
                     <Grid.Column>
                         {showLogin ?
                             <Button
                                 content='Sign up'
                                 icon='signup'
-                                size='big' onClick={toggle}
+                                size='big'
+                                onClick={toggle}
                             />
-                            : <Button
+                            :
+                            <Button
                                 content='Sign in'
                                 icon='sign-in'
-                                size='big' 
+                                size='big'
                                 onClick={toggle}
                             />}
                     </Grid.Column>

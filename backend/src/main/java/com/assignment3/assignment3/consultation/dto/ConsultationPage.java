@@ -5,13 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConsultationSimpleDto {
-    private String startDate;
-    private String endDate;
-    private String description;
-    private Long id;
+public class ConsultationPage {
+    private int totalPages;
+    private List<ConsultationDisplayDto> consultations;
 }

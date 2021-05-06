@@ -1,5 +1,6 @@
 package com.assignment3.assignment3.consultation;
 
+import com.assignment3.assignment3.consultation.dto.ConsultationDescriptionDto;
 import com.assignment3.assignment3.consultation.dto.ConsultationRequestDto;
 import com.assignment3.assignment3.consultation.dto.ConsultationUpdateDateRequest;
 import com.assignment3.assignment3.security.dto.MessageResponse;
@@ -36,6 +37,19 @@ public class ConsultationController {
         try {
             var consultations = consultationService.findAll(doctor,
                     patient, page, consultationPerPage);
+            return ResponseEntity.ok(consultations);
+        } catch (Exception ex) {
+            return ResponseEntity.badRequest().body(
+                    new MessageResponse(ex.getMessage())
+            );
+        }
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<?> getByMedic(@PathVariable Long id, @RequestParam Integer page,
+                                        @RequestParam Integer consultationsPerPage) {
+        try {
+            var consultations = consultationService.findByMedic(id, page, consultationsPerPage);
             return ResponseEntity.ok(consultations);
         } catch (Exception ex) {
             return ResponseEntity.badRequest().body(
@@ -95,9 +109,9 @@ public class ConsultationController {
     }
 
     @PutMapping("{id}")
-    public ResponseEntity<?> updateDescription(@RequestBody String description, @PathVariable Long id) {
+    public ResponseEntity<?> updateDescription(@RequestBody ConsultationDescriptionDto description, @PathVariable Long id) {
         try {
-            consultationService.updateDescription(id, description);
+            consultationService.updateDescription(id, description.getNewDescription());
             return ResponseEntity.ok(
                     new MessageResponse(
                             "Description updated successfully."

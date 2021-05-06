@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConsultationSimpleDto {
-    private String startDate;
-    private String endDate;
-    private String description;
-    private Long id;
+public class ConsultationDescriptionDto {
+    private String newDescription;
 }

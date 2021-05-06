@@ -1,6 +1,7 @@
 package com.assignment3.assignment3.patient;
 
 import com.assignment3.assignment3.patient.dto.PatientDisplayDto;
+import com.assignment3.assignment3.patient.dto.PatientPage;
 import com.assignment3.assignment3.patient.dto.PatientRequestDto;
 import com.assignment3.assignment3.patient.mapper.PatientMapper;
 import com.assignment3.assignment3.patient.model.Patient;
@@ -21,10 +22,16 @@ public class PatientService {
         patientRepository.save(patientMapper.patientFromRequest(patient));
     }
 
-    public List<PatientDisplayDto> findAll(String name, int page, int patientsPerPage) {
+    public PatientPage findAll(String name, int page, int patientsPerPage) {
         var pageable = PageRequest.of(page, patientsPerPage);
-        return patientRepository.findAll(PatientSpecifications.similarName(name), pageable)
-                .get().map(patientMapper::patientDisplayFromPatient).collect(Collectors.toList());
+        var patientPage = patientRepository
+                .findAll(PatientSpecifications.similarName(name), pageable);
+        var patients = patientPage.get()
+                .map(patientMapper::patientDisplayFromPatient).collect(Collectors.toList());
+        return PatientPage.builder()
+                .totalPages(patientPage.getTotalPages())
+                .patients(patients)
+                .build();
     }
 
     public void updatePatient(Long id, PatientRequestDto request) {
@@ -44,5 +51,9 @@ public class PatientService {
 
     public void delete(Long id) {
         patientRepository.deleteById(id);
+    }
+
+    public long count() {
+        return patientRepository.count();
     }
 }

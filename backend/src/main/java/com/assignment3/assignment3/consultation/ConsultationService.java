@@ -1,6 +1,7 @@
 package com.assignment3.assignment3.consultation;
 
 import com.assignment3.assignment3.consultation.dto.ConsultationDisplayDto;
+import com.assignment3.assignment3.consultation.dto.ConsultationPage;
 import com.assignment3.assignment3.consultation.dto.ConsultationRequestDto;
 import com.assignment3.assignment3.consultation.dto.ConsultationUpdateDateRequest;
 import com.assignment3.assignment3.consultation.mapper.ConsultationMapper;
@@ -50,14 +51,19 @@ public class ConsultationService {
         consultationRepository.save(consultation);
     }
 
-    public List<ConsultationDisplayDto> findAll(String doctor, String patient,
-                                                int page, int consultationsPerPage) {
+    public ConsultationPage findAll(String doctor, String patient,
+                                    int page, int consultationsPerPage) {
         var pageable = PageRequest.of(page, consultationsPerPage);
         var specification = similarDoctor(doctor)
                 .and(similarPatient(patient));
-        return consultationRepository.findAll(specification, pageable)
+        var consultationsPage = consultationRepository.findAll(specification, pageable);
+        var consultations = consultationsPage
                 .get().map(consultationMapper::consultationDisplayFromConsultation)
                 .collect(Collectors.toList());
+        return ConsultationPage.builder()
+                .totalPages(consultationsPage.getTotalPages())
+                .consultations(consultations)
+                .build();
     }
 
     public void delete(Long id) {
@@ -88,6 +94,17 @@ public class ConsultationService {
         var consultation = findById(id);
         consultation.setDescription(description);
         consultationRepository.save(consultation);
+    }
+
+    public ConsultationPage findByMedic(Long id, int page, int consultationsPerPage) {
+        var pageable = PageRequest.of(page, consultationsPerPage);
+        var consultationsPage = consultationRepository.findAllByDoctorId(id, pageable);
+        var consultations = consultationsPage.get().map(consultationMapper::consultationDisplayFromConsultation)
+                .collect(Collectors.toList());
+        return ConsultationPage.builder()
+                .totalPages(consultationsPage.getTotalPages())
+                .consultations(consultations)
+                .build();
     }
 
     public Consultation findById(Long id) {

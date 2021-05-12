@@ -19,12 +19,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.assignment3.assignment3.consultation.ConsultationSpecifications.similarDoctor;
-import static com.assignment3.assignment3.consultation.ConsultationSpecifications.similarPatient;
+import static com.assignment3.assignment3.consultation.ConsultationSpecifications.*;
 
 @Service
 @RequiredArgsConstructor
-//TODO add validation for dates(aka vezi daca-i liber doftoru')
 public class ConsultationService {
     private final ConsultationRepository consultationRepository;
     private final UserRepository userRepository;
@@ -41,6 +39,9 @@ public class ConsultationService {
                 .orElseThrow(() -> new RuntimeException("Couldn't find patient with given id."));
 
         var endDate = new Date(request.getDate().getTime() + request.getDuration() * 60000L);
+        if(!isDoctorAvailable(request.getDoctorId(), request.getDate())){
+            throw new RuntimeException("Doctor is not available");
+        }
         var consultation = Consultation.builder()
                 .doctor(doctor)
                 .patient(patient)
@@ -110,5 +111,12 @@ public class ConsultationService {
     public Consultation findById(Long id) {
         return consultationRepository.findById(id)
                 .orElseThrow(()-> new RuntimeException("No consultation with given id."));
+    }
+
+    public boolean isDoctorAvailable(Long id, Date date) {
+
+        var consultations = consultationRepository
+                .findAllByStartDateIsBeforeAndEndDateIsAfter(date, date);
+        return consultations.isEmpty();
     }
 }
